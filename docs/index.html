@@ -1,0 +1,847 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FULFSE STORAGE - Motor Termodinamico Quantico</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #0a0a0f 0%, #1a1a2e 100%);
+            color: #e0e0e0;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .container {
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        header {
+            padding: 20px 40px;
+            background: rgba(10, 10, 15, 0.9);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            position: relative;
+            z-index: 100;
+        }
+
+        header h1 {
+            font-size: 1.8rem;
+            font-weight: 300;
+            letter-spacing: 2px;
+            color: #00d4ff;
+            text-transform: uppercase;
+        }
+
+        header h2 {
+            font-size: 0.9rem;
+            font-weight: 300;
+            color: #888;
+            letter-spacing: 1px;
+            margin-top: 5px;
+        }
+
+        .main-content {
+            display: flex;
+            flex: 1;
+            position: relative;
+        }
+
+        .canvas-container {
+            flex: 1;
+            position: relative;
+        }
+
+        #canvas3d {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+
+        .info-panel {
+            width: 380px;
+            background: rgba(20, 20, 30, 0.95);
+            backdrop-filter: blur(10px);
+            border-left: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 30px;
+            overflow-y: auto;
+            transition: all 0.3s ease;
+        }
+
+        .info-panel.hidden {
+            transform: translateX(100%);
+            opacity: 0;
+        }
+
+        .layer-selector {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .layer-btn {
+            padding: 8px 12px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            background: transparent;
+            color: #ccc;
+            cursor: pointer;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            transition: all 0.2s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .layer-btn:hover {
+            background: rgba(0, 212, 255, 0.1);
+            border-color: #00d4ff;
+            color: #00d4ff;
+        }
+
+        .layer-btn.active {
+            background: #00d4ff;
+            color: #000;
+            border-color: #00d4ff;
+        }
+
+        .layer-btn.layer-0 { border-color: #0066ff; color: #0066ff; }
+        .layer-btn.layer-0.active { background: #0066ff; color: #fff; }
+        .layer-btn.layer-1 { border-color: #8844ff; color: #8844ff; }
+        .layer-btn.layer-1.active { background: #8844ff; color: #fff; }
+        .layer-btn.layer-2 { border-color: #ffcc00; color: #ffcc00; }
+        .layer-btn.layer-2.active { background: #ffcc00; color: #000; }
+        .layer-btn.layer-3 { border-color: #ff8800; color: #ff8800; }
+        .layer-btn.layer-3.active { background: #ff8800; color: #000; }
+        .layer-btn.layer-4 { border-color: #ff4444; color: #ff4444; }
+        .layer-btn.layer-4.active { background: #ff4444; color: #fff; }
+        .layer-btn.layer-5 { border-color: #44ff88; color: #44ff88; }
+        .layer-btn.layer-5.active { background: #44ff88; color: #000; }
+        .layer-btn.layer-6 { border-color: #888888; color: #888888; }
+        .layer-btn.layer-6.active { background: #888888; color: #fff; }
+
+        .component-info {
+            margin-bottom: 20px;
+        }
+
+        .component-info h3 {
+            font-size: 1.1rem;
+            color: #00d4ff;
+            margin-bottom: 10px;
+            font-weight: 500;
+        }
+
+        .component-info .layer-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+
+        .component-info .layer-0 { background: #0066ff; }
+        .component-info .layer-1 { background: #8844ff; }
+        .component-info .layer-2 { background: #ffcc00; }
+        .component-info .layer-3 { background: #ff8800; }
+        .component-info .layer-4 { background: #ff4444; }
+        .component-info .layer-5 { background: #44ff88; }
+        .component-info .layer-6 { background: #888888; }
+
+        .component-info p {
+            font-size: 0.85rem;
+            line-height: 1.6;
+            color: #bbb;
+            margin-bottom: 10px;
+        }
+
+        .component-info .spec {
+            font-size: 0.8rem;
+            color: #888;
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .component-info .spec span {
+            color: #00d4ff;
+            font-family: monospace;
+        }
+
+        .system-diagram {
+            margin-top: 30px;
+            padding: 20px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 8px;
+        }
+
+        .system-diagram h4 {
+            font-size: 0.9rem;
+            color: #00d4ff;
+            margin-bottom: 15px;
+            font-weight: 500;
+        }
+
+        .flow-chart {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .flow-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 12px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 4px;
+            font-size: 0.75rem;
+        }
+
+        .flow-item .arrow {
+            color: #00d4ff;
+            font-size: 1rem;
+        }
+
+        .controls {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            display: flex;
+            gap: 10px;
+            z-index: 10;
+        }
+
+        .control-btn {
+            padding: 10px 15px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            background: rgba(20, 20, 30, 0.9);
+            color: #ccc;
+            cursor: pointer;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            transition: all 0.2s ease;
+        }
+
+        .control-btn:hover {
+            background: rgba(0, 212, 255, 0.1);
+            border-color: #00d4ff;
+            color: #00d4ff;
+        }
+
+        .stats-panel {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: rgba(20, 20, 30, 0.95);
+            padding: 15px;
+            border-radius: 8px;
+            font-size: 0.75rem;
+            z-index: 10;
+            max-width: 250px;
+        }
+
+        .stats-panel .stat {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 5px;
+            color: #bbb;
+        }
+
+        .stats-panel .stat span {
+            color: #00d4ff;
+        }
+
+        .loading {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: #00d4ff;
+            font-size: 1.2rem;
+        }
+
+        .instructions {
+            position: absolute;
+            bottom: 20px;
+            right: 400px;
+            background: rgba(20, 20, 30, 0.9);
+            padding: 15px 20px;
+            border-radius: 8px;
+            font-size: 0.8rem;
+            color: #888;
+            text-align: center;
+            max-width: 400px;
+        }
+
+        @media (max-width: 1200px) {
+            .info-panel {
+                position: fixed;
+                right: 0;
+                top: 0;
+                bottom: 0;
+                width: 350px;
+                z-index: 1000;
+            }
+
+            .info-panel.hidden {
+                transform: translateX(100%);
+            }
+
+            .instructions {
+                right: 20px;
+                max-width: 300px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            header {
+                padding: 15px 20px;
+            }
+
+            header h1 {
+                font-size: 1.4rem;
+            }
+
+            .main-content {
+                flex-direction: column;
+            }
+
+            .canvas-container {
+                height: 50vh;
+            }
+
+            .info-panel {
+                width: 100%;
+                position: relative;
+                order: -1;
+                transform: none !important;
+                opacity: 1 !important;
+            }
+
+            .instructions {
+                position: relative;
+                margin: 10px 20px;
+                max-width: none;
+            }
+
+            .controls {
+                bottom: auto;
+                top: 10px;
+                left: auto;
+                right: 10px;
+            }
+
+            .stats-panel {
+                top: 60px;
+                left: 10px;
+                right: 10px;
+                max-width: none;
+            }
+
+            .layer-selector {
+                justify-content: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>FULFSE STORAGE</h1>
+            <h2>MOTOR TERMODINAMICO QUANTICO - PROJETO HELIOS</h2>
+        </header>
+
+        <div class="main-content">
+            <div class="canvas-container">
+                <canvas id="canvas3d"></canvas>
+                <div class="loading">Carregando visualizacao 3D...</div>
+                
+                <div class="stats-panel">
+                    <div class="stat"><span>Volume:</span> 12 cm3</div>
+                    <div class="stat"><span>Massa:</span> 340 g</div>
+                    <div class="stat"><span>Potencia:</span> 4.7 kW</div>
+                    <div class="stat"><span>Eficiencia:</span> 87%</div>
+                    <div class="stat"><span>Temperatura Nucleo:</span> 0.003 K</div>
+                </div>
+
+                <div class="controls">
+                    <button class="control-btn" onclick="resetCamera()">Resetar Camera</button>
+                    <button class="control-btn" onclick="toggleAnimation()">Pausar/Continuar</button>
+                    <button class="control-btn" onclick="toggleExplodedView()">Explodir/Unir</button>
+                </div>
+
+                <div class="instructions">
+                    Clique nas camadas para ver detalhes. Use o mouse para rotacionar e zoom.
+                </div>
+            </div>
+
+            <div class="info-panel" id="infoPanel">
+                <div class="layer-selector">
+                    <button class="layer-btn layer-0 active" onclick="showLayer(0)">Camada 0 - Nucleo</button>
+                    <button class="layer-btn layer-1" onclick="showLayer(1)">Camada 1 - Retificadora</button>
+                    <button class="layer-btn layer-2" onclick="showLayer(2)">Camada 2 - Zeno</button>
+                    <button class="layer-btn layer-3" onclick="showLayer(3)">Camada 3 - Topologica</button>
+                    <button class="layer-btn layer-4" onclick="showLayer(4)">Camada 4 - Casca</button>
+                    <button class="layer-btn layer-5" onclick="showLayer(5)">Camada 5 - Atuadores</button>
+                    <button class="layer-btn layer-6" onclick="showLayer(6)">Camada 6 - Radiador</button>
+                </div>
+
+                <div id="componentInfo">
+                    <div class="component-info">
+                        <h3><span class="layer-indicator layer-0"></span> CAMADA 0 - Nucleo de Cristal de Tempo</h3>
+                        <p><strong>Material:</strong> Rede de disseleneto de tantalo (1T-TaS2) estabilizado em fase de cristal de tempo de Floquet, dopado com fermions de Majorana sinteticos.</p>
+                        <p><strong>Funcao:</strong> Fornece a oscilacao atomica perpetua de base. Os atomos vibram em padrao periodico que nao consome energia liquida (quebra espontanea de simetria temporal).</p>
+                        <p><strong>Dimensao:</strong> Esfera de 8 mm de diametro.</p>
+                        <p class="spec"><strong>Temperatura operacional:</strong> <span>0.003 K</span></p>
+                    </div>
+
+                    <div class="system-diagram">
+                        <h4>INFLUENCIA SISTEMICA</h4>
+                        <div class="flow-chart">
+                            <div class="flow-item">
+                                <span>Fonte de energia base</span>
+                                <span class="arrow">&#8594;</span>
+                            </div>
+                            <div class="flow-item">
+                                <span>Oscilacao perpetua</span>
+                                <span class="arrow">&#8594;</span>
+                            </div>
+                            <div class="flow-item">
+                                <span>Alimenta Camada 1</span>
+                                <span class="arrow">&#8594;</span>
+                            </div>
+                            <div class="flow-item">
+                                <span>Controlado por Camada 2</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script>
+        // Configuracao do Three.js
+        let scene, camera, renderer, motorGroup, layers = [], exploded = false, isAnimating = true;
+        let currentLayer = 0;
+
+        // Cores das camadas
+        const layerColors = [
+            0x0066ff, // Camada 0 - Azul
+            0x8844ff, // Camada 1 - Roxo
+            0xffcc00, // Camada 2 - Amarelo
+            0xff8800, // Camada 3 - Laranja
+            0xff4444, // Camada 4 - Vermelho
+            0x44ff88, // Camada 5 - Verde
+            0x888888  // Camada 6 - Cinza
+        ];
+
+        // Tamanhos das camadas (raio ou dimensoes)
+        const layerSizes = [
+            0.004,   // Camada 0 - Nucleo (4mm raio)
+            0.008,   // Camada 1 - Retificadora
+            0.012,   // Camada 2 - Zeno
+            0.016,   // Camada 3 - Topologica
+            0.020,   // Camada 4 - Casca
+            0.022,   // Camada 5 - Atuadores
+            0.024    // Camada 6 - Radiador
+        ];
+
+        // Nomes das camadas
+        const layerNames = [
+            "Nucleo de Cristal de Tempo",
+            "Matriz de Retificacao de Ponto Zero",
+            "Processador Zeno",
+            "Isolante Topologico 3D",
+            "Casca Holografica de Dissipacao",
+            "Atuadores Piezoeletricos",
+            "Interface Ambiental"
+        ];
+
+        // Descricoes das camadas
+        const layerDescriptions = [
+            {
+                material: "Rede de disseleneto de tantalo (1T-TaS2) estabilizado em fase de cristal de tempo de Floquet, dopado com fermions de Majorana sinteticos.",
+                funcao: "Fornece a oscilacao atomica perpetua de base. Os atomos vibram em padrao periodico que nao consome energia liquida (quebra espontanea de simetria temporal).",
+                dimensao: "Esfera de 8 mm de diametro.",
+                spec: "Temperatura operacional: 0.003 K (mantida por resfriamento por diluicao interno na ignicao)."
+            },
+            {
+                material: "144 camadas alternadas de grafeno bicamada torcido (angulo magico de 1.1) e diodos de tunelamento ressonante de arsenieto de galio.",
+                funcao: "Penteia as flutuacoes quanticas do vacuo que interagem com o cristal de tempo e as retifica em corrente eletrica DC util. Equivalente quantico de um diodo, operando no vacuo.",
+                dimensao: "Camada esferica de 8-16mm de diametro.",
+                spec: "Saida: 48 V DC estabilizados, com ripple de menos de 0.001%."
+            },
+            {
+                material: "Chip quantico de niobio supercondutor com 2.048 qubits topologicos, operando a 15 milikelvin.",
+                funcao: "Executa o algoritmo de Medicao Fraca Continua com Retroalimentacao de Zeno. Faz ~10^9 medicoes fracas por segundo, mantendo o cristal de tempo congelado em seu estado coerente enquanto permite a extracao controlada de energia.",
+                dimensao: "Camada esferica de 16-24mm de diametro.",
+                spec: "Consumo: 12 W (retirados da propria saida da Camada 1)."
+            },
+            {
+                material: "Bismuto seleneto (Bi2Se3) nanostruturado em geometria de nanofolhas, dopado com antimonio.",
+                funcao: "Age como uma parede unidirecional para a entropia. O interior e isolante perfeito (entropia nao entra), mas a superficie e um condutor topologico que bombeia ativamente a entropia gerada pelo trabalho macroscopico para fora.",
+                dimensao: "Espessura: 2 mm.",
+                spec: "Efeito colateral: Emite radiacao infravermelha distante (15-30 um) e luminescencia azulada em carga maxima."
+            },
+            {
+                material: "Malha de nanotubos de carbono de parede dupla entrelacados com fios de grafeno estirado, formando uma superficie 2D continua.",
+                funcao: "Recebe a entropia projetada pela Camada 3 e a armazena em uma area superficial maxima, reduzindo a densidade entropica local. Gerencia o Limite de Bekenstein.",
+                dimensao: "Camada externa de 24-44mm de diametro.",
+                spec: "Capacidade maxima: 8.4 x 10^45 bits de informacao entropica (~72 horas de voo)."
+            },
+            {
+                material: "Ceramica PZT (titanato zirconato de chumbo) em nanoescala, disposta em 6 aneis concenctricos.",
+                funcao: "Converte a eletricidade DC da Camada 1 em vibracao mecanica de alta frequencia (40-80 kHz), transmitida as superfices de sustentacao do drone.",
+                dimensao: "6 aneis concenctricos na superficie externa.",
+                spec: "Eficiencia de conversao: 94%."
+            },
+            {
+                material: "Revestimento de aerogel de silica com nanoparticulas de ouro (emissividade termica de 0.97).",
+                funcao: "Irradia a entropia final para o ambiente na forma de fotons de baixissima energia. Gera o Halo Entropico observavel externamente.",
+                dimensao: "Espessura: 0.5 mm.",
+                spec: "Temperatura externa: -4C a +18C (dependendo da carga)."
+            }
+        ];
+
+        // Fluxo sistemico
+        const systemFlows = [
+            ["Fonte de energia base", "Oscilacao perpetua", "Alimenta Camada 1", "Controlado por Camada 2"],
+            ["Retifica flutuacoes do vacuo", "Gera corrente DC", "Alimenta Camada 2", "Fornece energia para Camada 5"],
+            ["Estabiliza cristal de tempo", "Mantem coerencia quantica", "Permite extracao de energia", "Auto-alimentado"],
+            ["Barreira entropica unidirecional", "Isola nucleo", "Bombeia entropia para fora", "Protege sistema interno"],
+            ["Armazena entropia", "Gerencia Limite de Bekenstein", "Dissipa para Camada 6", "Capacidade limitada"],
+            ["Converte energia em trabalho", "Gera vibracao mecanica", "Transmite para sustentacao", "Alta eficiencia"],
+            ["Irradia entropia", "Gera Halo Entropico", "Resfria ambiente", "Assinatura termica"],
+        ];
+
+        // Inicializacao
+        function init() {
+            // Cria cena
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x0a0a0f);
+
+            // Cria camera
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / (window.innerHeight - 80), 0.001, 1000);
+            camera.position.set(0.05, 0.05, 0.05);
+
+            // Cria renderer
+            renderer = new THREE.WebGLRenderer({ 
+                canvas: document.getElementById('canvas3d'),
+                antialias: true,
+                alpha: true
+            });
+            renderer.setSize(window.innerWidth, window.innerHeight - 80);
+            renderer.setPixelRatio(window.devicePixelRatio);
+
+            // Luz ambiente
+            const ambientLight = new THREE.AmbientLight(0x404040, 0.5);
+            scene.add(ambientLight);
+
+            // Luz direcional
+            const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
+            directionalLight.position.set(1, 1, 1);
+            scene.add(directionalLight);
+
+            // Luz de ponto
+            const pointLight = new THREE.PointLight(0x00d4ff, 0.5);
+            pointLight.position.set(0, 0, 0.1);
+            scene.add(pointLight);
+
+            // Cria motor
+            motorGroup = new THREE.Group();
+            scene.add(motorGroup);
+
+            // Cria camadas
+            createLayers();
+
+            // Controles de orbit
+            controls = new THREE.OrbitControls(camera, renderer.domElement);
+            controls.enableDamping = true;
+            controls.dampingFactor = 0.05;
+            controls.minDistance = 0.03;
+            controls.maxDistance = 0.1;
+
+            // Esconde loading
+            document.querySelector('.loading').style.display = 'none';
+
+            // Anima
+            animate();
+
+            // Trata resize
+            window.addEventListener('resize', onWindowResize);
+        }
+
+        // Cria camadas
+        function createLayers() {
+            // Camada 0 - Nucleo (esfera)
+            const layer0Geometry = new THREE.SphereGeometry(layerSizes[0], 32, 32);
+            const layer0Material = new THREE.MeshPhongMaterial({
+                color: layerColors[0],
+                emissive: layerColors[0],
+                emissiveIntensity: 0.3,
+                transparent: true,
+                opacity: 0.9,
+                shininess: 100
+            });
+            layers[0] = new THREE.Mesh(layer0Geometry, layer0Material);
+            layers[0].name = "layer-0";
+            layers[0].userData = { layerIndex: 0 };
+            motorGroup.add(layers[0]);
+
+            // Camada 1 - Retificadora (esfera com textura)
+            const layer1Geometry = new THREE.SphereGeometry(layerSizes[1], 32, 32);
+            const layer1Material = new THREE.MeshPhongMaterial({
+                color: layerColors[1],
+                transparent: true,
+                opacity: 0.7,
+                shininess: 50
+            });
+            layers[1] = new THREE.Mesh(layer1Geometry, layer1Material);
+            layers[1].name = "layer-1";
+            layers[1].userData = { layerIndex: 1 };
+            motorGroup.add(layers[1]);
+
+            // Camada 2 - Zeno (esfera com wireframe)
+            const layer2Geometry = new THREE.SphereGeometry(layerSizes[2], 32, 32);
+            const layer2Material = new THREE.MeshPhongMaterial({
+                color: layerColors[2],
+                transparent: true,
+                opacity: 0.6,
+                shininess: 30,
+                wireframe: true
+            });
+            layers[2] = new THREE.Mesh(layer2Geometry, layer2Material);
+            layers[2].name = "layer-2";
+            layers[2].userData = { layerIndex: 2 };
+            motorGroup.add(layers[2]);
+
+            // Camada 3 - Topologica (esfera com textura metalica)
+            const layer3Geometry = new THREE.SphereGeometry(layerSizes[3], 32, 32);
+            const layer3Material = new THREE.MeshStandardMaterial({
+                color: layerColors[3],
+                metalness: 0.7,
+                roughness: 0.3,
+                transparent: true,
+                opacity: 0.6
+            });
+            layers[3] = new THREE.Mesh(layer3Geometry, layer3Material);
+            layers[3].name = "layer-3";
+            layers[3].userData = { layerIndex: 3 };
+            motorGroup.add(layers[3]);
+
+            // Camada 4 - Casca (esfera com emissao)
+            const layer4Geometry = new THREE.SphereGeometry(layerSizes[4], 32, 32);
+            const layer4Material = new THREE.MeshPhongMaterial({
+                color: layerColors[4],
+                emissive: layerColors[4],
+                emissiveIntensity: 0.2,
+                transparent: true,
+                opacity: 0.5,
+                shininess: 20
+            });
+            layers[4] = new THREE.Mesh(layer4Geometry, layer4Material);
+            layers[4].name = "layer-4";
+            layers[4].userData = { layerIndex: 4 };
+            motorGroup.add(layers[4]);
+
+            // Camada 5 - Atuadores (6 aneis)
+            layers[5] = new THREE.Group();
+            layers[5].name = "layer-5";
+            layers[5].userData = { layerIndex: 5 };
+            for (let i = 0; i < 6; i++) {
+                const ringGeometry = new THREE.TorusGeometry(layerSizes[5] + i * 0.001, 0.0005, 16, 32);
+                const ringMaterial = new THREE.MeshPhongMaterial({
+                    color: layerColors[5],
+                    transparent: true,
+                    opacity: 0.8,
+                    shininess: 80
+                });
+                const ring = new THREE.Mesh(ringGeometry, ringMaterial);
+                ring.rotation.x = Math.PI / 2;
+                layers[5].add(ring);
+            }
+            motorGroup.add(layers[5]);
+
+            // Camada 6 - Radiador (esfera externa com textura)
+            const layer6Geometry = new THREE.SphereGeometry(layerSizes[6], 32, 32);
+            const layer6Material = new THREE.MeshStandardMaterial({
+                color: layerColors[6],
+                metalness: 0.2,
+                roughness: 0.8,
+                transparent: true,
+                opacity: 0.4
+            });
+            layers[6] = new THREE.Mesh(layer6Geometry, layer6Material);
+            layers[6].name = "layer-6";
+            layers[6].userData = { layerIndex: 6 };
+            motorGroup.add(layers[6]);
+
+            // Adiciona raio X para interacao
+            addRaycaster();
+        }
+
+        // Adiciona raycaster para interacao
+        function addRaycaster() {
+            const raycaster = new THREE.Raycaster();
+            const mouse = new THREE.Vector2();
+
+            function onMouseClick(event) {
+                // Calcula posicao do mouse
+                mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+                mouse.y = -((event.clientY - 80) / (window.innerHeight - 80)) * 2 + 1;
+
+                // Atualiza raycaster
+                raycaster.setFromCamera(mouse, camera);
+
+                // Verifica intersecao
+                const intersects = raycaster.intersectObjects(motorGroup.children, true);
+
+                if (intersects.length > 0) {
+                    const object = intersects[0].object;
+                    if (object.userData && object.userData.layerIndex !== undefined) {
+                        showLayer(object.userData.layerIndex);
+                    } else if (object.parent && object.parent.userData && object.parent.userData.layerIndex !== undefined) {
+                        showLayer(object.parent.userData.layerIndex);
+                    }
+                }
+            }
+
+            window.addEventListener('click', onMouseClick, false);
+        }
+
+        // Mostra camada
+        function showLayer(index) {
+            currentLayer = index;
+
+            // Atualiza botoes
+            document.querySelectorAll('.layer-btn').forEach((btn, i) => {
+                btn.classList.toggle('active', i === index);
+            });
+
+            // Atualiza informacoes
+            const desc = layerDescriptions[index];
+            const flow = systemFlows[index];
+
+            let infoHtml = `
+                <div class="component-info">
+                    <h3><span class="layer-indicator layer-${index}"></span> CAMADA ${index} - ${layerNames[index].toUpperCase()}</h3>
+                    <p><strong>Material:</strong> ${desc.material}</p>
+                    <p><strong>Funcao:</strong> ${desc.funcao}</p>
+                    <p><strong>Dimensao:</strong> ${desc.dimensao}</p>
+                    <p class="spec"><strong>Especificacao:</strong> <span>${desc.spec}</span></p>
+                </div>
+
+                <div class="system-diagram">
+                    <h4>INFLUENCIA SISTEMICA</h4>
+                    <div class="flow-chart">
+            `;
+
+            flow.forEach(item => {
+                infoHtml += `<div class="flow-item"><span>${item}</span>`;
+                if (flow.indexOf(item) < flow.length - 1) {
+                    infoHtml += `<span class="arrow">&#8594;</span>`;
+                }
+                infoHtml += `</div>`;
+            });
+
+            infoHtml += `
+                    </div>
+                </div>
+            `;
+
+            document.getElementById('componentInfo').innerHTML = infoHtml;
+
+            // Destaque visual
+            highlightLayer(index);
+        }
+
+        // Destaque da camada
+        function highlightLayer(index) {
+            layers.forEach((layer, i) => {
+                if (layer.material) {
+                    layer.material.emissiveIntensity = (i === index) ? 0.5 : 0;
+                    layer.material.emissive = (i === index) ? layerColors[i] : 0x000000;
+                } else if (layer.children) {
+                    layer.children.forEach(child => {
+                        if (child.material) {
+                            child.material.emissiveIntensity = (i === index) ? 0.5 : 0;
+                            child.material.emissive = (i === index) ? layerColors[i] : 0x000000;
+                        }
+                    });
+                }
+            });
+        }
+
+        // Anima
+        function animate() {
+            requestAnimationFrame(animate);
+
+            if (isAnimating) {
+                // Rotacao lenta do motor
+                motorGroup.rotation.y += 0.001;
+            }
+
+            controls.update();
+            renderer.render(scene, camera);
+        }
+
+        // Toggle animacao
+        function toggleAnimation() {
+            isAnimating = !isAnimating;
+        }
+
+        // Toggle view explodida
+        function toggleExplodedView() {
+            exploded = !exploded;
+
+            if (exploded) {
+                // Espaca camadas
+                layers.forEach((layer, index) => {
+                    if (layer.position) {
+                        layer.position.set(0, 0, index * 0.01);
+                    }
+                });
+            } else {
+                // Retorna a posicao original
+                layers.forEach((layer) => {
+                    if (layer.position) {
+                        layer.position.set(0, 0, 0);
+                    }
+                });
+            }
+        }
+
+        // Reset camera
+        function resetCamera() {
+            camera.position.set(0.05, 0.05, 0.05);
+            controls.reset();
+        }
+
+        // Resize
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / (window.innerHeight - 80);
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight - 80);
+        }
+
+        // Inicializa
+        init();
+
+        // Mostra camada inicial
+        showLayer(0);
+    </script>
+</body>
+</html>
